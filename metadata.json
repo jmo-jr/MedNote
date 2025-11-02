@@ -1,0 +1,5 @@
+{
+  "name": "MedNote",
+  "description": "An application for doctors to manage patient information and consultation notes, built with React and Tailwind CSS.",
+  "requestFramePermissions": []
+}
