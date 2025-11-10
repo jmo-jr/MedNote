@@ -1,6 +1,6 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useData } from '../../context/DataContext';
+import type { Patient } from '../../types';
 
 const CloseIcon: React.FC<{ className?: string }> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -41,13 +41,14 @@ const Checkbox: React.FC<{ label: string; id: string; checked: boolean; onChange
 );
 
 
-interface NewPatientModalProps {
+interface EditPatientModalProps {
     isOpen: boolean;
     onClose: () => void;
+    patient: Patient;
 }
 
-const NewPatientModal: React.FC<NewPatientModalProps> = ({ isOpen, onClose }) => {
-    const { addPatient } = useData();
+const EditPatientModal: React.FC<EditPatientModalProps> = ({ isOpen, onClose, patient }) => {
+    const { updatePatient } = useData();
     
     const [name, setName] = useState('');
     const [dob, setDob] = useState('');
@@ -58,6 +59,25 @@ const NewPatientModal: React.FC<NewPatientModalProps> = ({ isOpen, onClose }) =>
     
     const chronicDiseaseOptions = ['DM2', 'HAS', 'Hiperlipidemia Mista', 'Alzheimer', 'Câncer', 'Diabetes'];
     const continuousMedicationOptions = ['Astorvastatina', 'Insulina', 'Losartana', 'Rosuvastatina Cálcica'];
+
+    const arrayToCheckboxState = (options: string[], selected: string[]): Record<string, boolean> => {
+        return options.reduce((acc, option) => {
+            acc[option] = selected.includes(option);
+            return acc;
+        }, {} as Record<string, boolean>);
+    };
+
+    useEffect(() => {
+        if (patient) {
+            setName(patient.name);
+            setDob(patient.dob);
+            setPhone(patient.phone);
+            setEmail(patient.email);
+            setDiseases(arrayToCheckboxState(chronicDiseaseOptions, patient.chronicDiseases));
+            setMeds(arrayToCheckboxState(continuousMedicationOptions, patient.continuousMedication));
+        }
+    }, [patient, isOpen]);
+
 
     if (!isOpen) {
         return null;
@@ -73,7 +93,8 @@ const NewPatientModal: React.FC<NewPatientModalProps> = ({ isOpen, onClose }) =>
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const patientData = {
+        const patientData: Patient = {
+            id: patient.id,
             name,
             dob,
             phone,
@@ -81,7 +102,7 @@ const NewPatientModal: React.FC<NewPatientModalProps> = ({ isOpen, onClose }) =>
             chronicDiseases: Object.keys(diseases).filter(k => diseases[k]),
             continuousMedication: Object.keys(meds).filter(k => meds[k]),
         };
-        addPatient(patientData);
+        updatePatient(patientData);
         onClose();
     };
 
@@ -97,7 +118,7 @@ const NewPatientModal: React.FC<NewPatientModalProps> = ({ isOpen, onClose }) =>
                 onClick={e => e.stopPropagation()}
             >
                 <div className="p-6 flex justify-between items-center border-b border-med-gray-200 shrink-0">
-                    <h2 className="text-xl font-bold text-med-gray-800">Cadastro de Novo Paciente</h2>
+                    <h2 className="text-xl font-bold text-med-gray-800">Editar Dados do Paciente</h2>
                     <button onClick={onClose} className="text-med-gray-400 hover:text-med-gray-600">
                         <CloseIcon className="h-6 w-6"/>
                     </button>
@@ -134,7 +155,7 @@ const NewPatientModal: React.FC<NewPatientModalProps> = ({ isOpen, onClose }) =>
                         onClick={handleSubmit}
                         className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-med-teal hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-med-teal"
                     >
-                        Cadastrar
+                        Salvar Alterações
                     </button>
                 </div>
             </div>
@@ -142,4 +163,4 @@ const NewPatientModal: React.FC<NewPatientModalProps> = ({ isOpen, onClose }) =>
     );
 };
 
-export default NewPatientModal;
+export default EditPatientModal;

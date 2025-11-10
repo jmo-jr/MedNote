@@ -1,13 +1,22 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useData } from '../context/DataContext';
+import AppHeader from '../components/AppHeader.tsx';
 import NewConsultationModal from '../components/modals/NewConsultationModal';
+import EditPatientModal from '../components/modals/EditPatientModal';
 
 const BackArrowIcon: React.FC<{ className?: string }> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
     </svg>
 );
+
+const PencilIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+    </svg>
+);
+
 
 const ChevronDownIcon: React.FC<{ className?: string }> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -34,11 +43,15 @@ const Accordion: React.FC<{ title: string; children: React.ReactNode, defaultOpe
 const PatientDetail: React.FC = () => {
   const { patientId } = useParams<{ patientId: string }>();
   const navigate = useNavigate();
-  const { getPatientById, getConsultationsByPatientId, user } = useData();
+  const { getPatientById, getConsultationsByPatientId } = useData();
   
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
+  const [isNewConsultationModalOpen, setIsNewConsultationModalOpen] = useState(false);
+  const openNewConsultationModal = () => setIsNewConsultationModalOpen(true);
+  const closeNewConsultationModal = () => setIsNewConsultationModalOpen(false);
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const openEditModal = () => setIsEditModalOpen(true);
+  const closeEditModal = () => setIsEditModalOpen(false);
 
   const patient = getPatientById(patientId!);
   const consultations = getConsultationsByPatientId(patientId!);
@@ -51,6 +64,7 @@ const PatientDetail: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen">
+      <AppHeader />
       <header className="sticky top-0 bg-white shadow-sm z-10 p-4 flex justify-between items-center">
         <div className="flex items-center space-x-4">
             <button onClick={() => navigate(-1)} className="text-med-gray-600">
@@ -58,11 +72,9 @@ const PatientDetail: React.FC = () => {
             </button>
             <h1 className="text-lg font-semibold text-med-gray-800 truncate">{patient.name}</h1>
         </div>
-        <Link to="/profile">
-          <div className="h-10 w-10 bg-med-gray-300 rounded-full flex items-center justify-center font-bold text-med-gray-600">
-            {user.initials}
-          </div>
-        </Link>
+        <button onClick={openEditModal} className="text-med-gray-600 hover:text-med-purple">
+            <PencilIcon className="h-5 w-5"/>
+        </button>
       </header>
       
       <main className="flex-grow overflow-y-auto p-4 space-y-4">
@@ -110,7 +122,7 @@ const PatientDetail: React.FC = () => {
       </main>
       
       <button
-        onClick={openModal}
+        onClick={openNewConsultationModal}
         className="fixed bottom-6 right-1/2 translate-x-[11rem] md:translate-x-[12rem] h-14 w-14 bg-med-purple rounded-full text-white flex items-center justify-center shadow-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-med-purple"
         aria-label="Adicionar Nova Consulta"
       >
@@ -119,7 +131,8 @@ const PatientDetail: React.FC = () => {
         </svg>
       </button>
 
-      <NewConsultationModal isOpen={isModalOpen} onClose={closeModal} patient={patient} />
+      <NewConsultationModal isOpen={isNewConsultationModalOpen} onClose={closeNewConsultationModal} patient={patient} />
+      <EditPatientModal isOpen={isEditModalOpen} onClose={closeEditModal} patient={patient} />
     </div>
   );
 };

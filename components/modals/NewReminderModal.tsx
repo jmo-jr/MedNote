@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import type { Patient } from '../../types';
 import { useData } from '../../context/DataContext';
@@ -80,7 +81,7 @@ const NewReminderModal: React.FC<NewReminderModalProps> = ({ isOpen, onClose, pa
                         <div>
                             <label htmlFor="date" className="block text-sm font-medium text-med-gray-700">Data:</label>
                             <div className="relative mt-1">
-                                <input type="date" id="date" value={dateValue} onChange={e => setDateValue(e.target.value)} className="block w-full px-3 py-2 bg-white border border-med-gray-300 rounded-md shadow-sm"/>
+                                <input type="date" id="date" value={dateValue} onChange={e => setDateValue(e.target.value)} className="block w-full px-3 py-2 bg-white border border-med-gray-300 rounded-md shadow-sm text-med-gray-900"/>
                                 <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                                     <CalendarIcon className="h-5 w-5 text-med-gray-400"/>
                                 </span>
@@ -89,7 +90,7 @@ const NewReminderModal: React.FC<NewReminderModalProps> = ({ isOpen, onClose, pa
                         <div>
                             <label htmlFor="time" className="block text-sm font-medium text-med-gray-700">Horário:</label>
                             <div className="relative mt-1">
-                                <input type="time" id="time" value={timeValue} onChange={e => setTimeValue(e.target.value)} className="block w-full px-3 py-2 bg-white border border-med-gray-300 rounded-md shadow-sm"/>
+                                <input type="time" id="time" value={timeValue} onChange={e => setTimeValue(e.target.value)} className="block w-full px-3 py-2 bg-white border border-med-gray-300 rounded-md shadow-sm text-med-gray-900"/>
                                 <span className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                                     <CalendarIcon className="h-5 w-5 text-med-gray-400"/>
                                 </span>
@@ -97,7 +98,7 @@ const NewReminderModal: React.FC<NewReminderModalProps> = ({ isOpen, onClose, pa
                         </div>
                         <div>
                             <label htmlFor="reminder-note" className="block text-sm font-medium text-med-gray-700">Lembrete:</label>
-                            <textarea id="reminder-note" rows={3} value={note} onChange={e => setNote(e.target.value)} className="mt-1 block w-full px-3 py-2 bg-white border border-med-gray-300 rounded-md shadow-sm" required></textarea>
+                            <textarea id="reminder-note" rows={3} value={note} onChange={e => setNote(e.target.value)} className="mt-1 block w-full px-3 py-2 bg-white border border-med-gray-300 rounded-md shadow-sm text-med-gray-900" required></textarea>
                         </div>
                     </div>
 

@@ -24,6 +24,7 @@ interface DataContextType {
   getConsultationByIds: (patientId: string, consultationId: string) => Consultation | undefined;
   getReminders: () => Reminder[];
   addPatient: (patient: Omit<Patient, 'id'>) => void;
+  updatePatient: (patient: Patient) => void;
   addConsultation: (consultation: Omit<Consultation, 'id'>) => void;
   addReminder: (reminder: Omit<Reminder, 'id'>) => void;
   updateReminder: (reminder: Reminder) => void;
@@ -66,6 +67,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setPatients(prev => [...prev, newPatient]);
   };
   
+  const updatePatient = (updatedPatient: Patient) => {
+      setPatients(prev => prev.map(p => p.id === updatedPatient.id ? updatedPatient : p));
+  };
+
   const addConsultation = (consultationData: Omit<Consultation, 'id'>) => {
       const newConsultation: Consultation = { ...consultationData, id: crypto.randomUUID() };
       setConsultations(prev => [...prev, newConsultation]);
@@ -91,6 +96,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     getConsultationByIds,
     getReminders,
     addPatient,
+    updatePatient,
     addConsultation,
     addReminder,
     updateReminder,

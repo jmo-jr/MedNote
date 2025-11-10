@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import type { Patient } from '../../types';
 import { useData } from '../../context/DataContext';
@@ -19,7 +20,7 @@ const FormTextarea: React.FC<{ label: string; id: string; value: string; onChang
             value={value}
             onChange={onChange}
             rows={rows}
-            className="mt-1 block w-full px-3 py-2 bg-white border border-med-gray-300 rounded-md shadow-sm placeholder-med-gray-400 focus:outline-none focus:ring-med-teal focus:border-med-teal"
+            className="mt-1 block w-full px-3 py-2 bg-white border border-med-gray-300 rounded-md shadow-sm placeholder-med-gray-400 focus:outline-none focus:ring-med-teal focus:border-med-teal text-med-gray-900"
         />
     </div>
 );
@@ -89,7 +90,7 @@ const NewConsultationModal: React.FC<NewConsultationModalProps> = ({ isOpen, onC
                     <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4">
                         <div>
                             <label htmlFor="location" className="block text-sm font-medium text-med-gray-700">Local</label>
-                            <select id="location" value={location} onChange={e => setLocation(e.target.value)} className="mt-1 block w-full px-3 py-2 bg-white border border-med-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-med-teal focus:border-med-teal">
+                            <select id="location" value={location} onChange={e => setLocation(e.target.value)} className="mt-1 block w-full px-3 py-2 bg-white border border-med-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-med-teal focus:border-med-teal text-med-gray-900">
                                 <option>PSF</option>
                                 <option>Clínica</option>
                             </select>
@@ -97,7 +98,7 @@ const NewConsultationModal: React.FC<NewConsultationModalProps> = ({ isOpen, onC
 
                         <div>
                             <label htmlFor="datetime" className="block text-sm font-medium text-med-gray-700">Data e Hora</label>
-                            <input type="datetime-local" id="datetime" value={dateTime} onChange={e => setDateTime(e.target.value)} className="mt-1 block w-full px-3 py-2 bg-white border border-med-gray-300 rounded-md shadow-sm"/>
+                            <input type="datetime-local" id="datetime" value={dateTime} onChange={e => setDateTime(e.target.value)} className="mt-1 block w-full px-3 py-2 bg-white border border-med-gray-300 rounded-md shadow-sm text-med-gray-900"/>
                         </div>
 
                         <FormTextarea label="Subjetivo" id="subjective" value={subjective} onChange={e => setSubjective(e.target.value)} rows={2} />
