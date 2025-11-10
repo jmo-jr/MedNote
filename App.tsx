@@ -15,7 +15,7 @@ import { useAuth } from './context/AuthContext';
 const App: React.FC = () => {
   const { isAuthenticated } = useAuth();
 
-  const ProtectedRoute: React.FC<{ children: JSX.Element }> = ({ children }) => {
+  const ProtectedRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
     if (!isAuthenticated) {
       return <Navigate to="/login" replace />;
     }
