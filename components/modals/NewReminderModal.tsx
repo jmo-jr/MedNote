@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Patient } from '../../types';
 import { useData } from '../../context/DataContext';
 
@@ -18,11 +18,11 @@ const CalendarIcon: React.FC<{ className?: string }> = ({ className }) => (
 interface NewReminderModalProps {
     isOpen: boolean;
     onClose: () => void;
-    patient: Patient;
+    patient?: Patient;
 }
 
 const NewReminderModal: React.FC<NewReminderModalProps> = ({ isOpen, onClose, patient }) => {
-    const { addReminder } = useData();
+    const { addReminder, patients } = useData();
 
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -30,6 +30,18 @@ const NewReminderModal: React.FC<NewReminderModalProps> = ({ isOpen, onClose, pa
     const [dateValue, setDateValue] = useState(tomorrow.toISOString().split('T')[0]);
     const [timeValue, setTimeValue] = useState('09:00');
     const [note, setNote] = useState('');
+    const [selectedPatientId, setSelectedPatientId] = useState('');
+
+    useEffect(() => {
+        if (!isOpen) {
+            return;
+        }
+        if (patient) {
+            setSelectedPatientId(patient.id);
+        } else {
+            setSelectedPatientId('');
+        }
+    }, [isOpen, patient]);
 
     if (!isOpen) {
         return null;
@@ -37,6 +49,9 @@ const NewReminderModal: React.FC<NewReminderModalProps> = ({ isOpen, onClose, pa
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        if (!selectedPatientId) {
+            return;
+        }
         
         const [hour, minute] = timeValue.split(':');
         const newDateTime = new Date(dateValue);
@@ -44,13 +59,16 @@ const NewReminderModal: React.FC<NewReminderModalProps> = ({ isOpen, onClose, pa
         newDateTime.setMinutes(parseInt(minute, 10));
 
         const reminderData = {
-            patientId: patient.id,
+            patientId: selectedPatientId,
             dateTime: newDateTime.toISOString(),
             note,
         };
         addReminder(reminderData);
         onClose();
     };
+
+    const hasPatients = patients.length > 0;
+    const isSubmitDisabled = !selectedPatientId;
 
     return (
         <div 
@@ -75,8 +93,23 @@ const NewReminderModal: React.FC<NewReminderModalProps> = ({ isOpen, onClose, pa
                 <form onSubmit={handleSubmit}>
                     <div className="p-6 space-y-4">
                         <div>
-                            <p className="text-sm font-medium text-med-gray-700">Paciente:</p>
-                            <p className="text-med-gray-800">{patient?.name}</p>
+                            <label htmlFor="patient" className="block text-sm font-medium text-med-gray-700">Paciente:</label>
+                            <select
+                                id="patient"
+                                value={selectedPatientId}
+                                onChange={e => setSelectedPatientId(e.target.value)}
+                                className="mt-1 block w-full px-3 py-2 bg-white border border-med-gray-300 rounded-md shadow-sm text-med-gray-900"
+                                required
+                                disabled={!hasPatients}
+                            >
+                                {!selectedPatientId && <option value="" disabled>Selecione um paciente</option>}
+                                {patients.map(p => (
+                                    <option key={p.id} value={p.id}>{p.name}</option>
+                                ))}
+                            </select>
+                            {!hasPatients && (
+                                <p className="text-xs text-med-gray-500 mt-1">Cadastre um paciente antes de criar lembretes.</p>
+                            )}
                         </div>
                         <div>
                             <label htmlFor="date" className="block text-sm font-medium text-med-gray-700">Data:</label>
@@ -112,7 +145,8 @@ const NewReminderModal: React.FC<NewReminderModalProps> = ({ isOpen, onClose, pa
                         </button>
                          <button
                             type="submit"
-                            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-med-teal hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-med-teal"
+                            disabled={isSubmitDisabled}
+                            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-med-teal hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-med-teal disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             Salvar
                         </button>

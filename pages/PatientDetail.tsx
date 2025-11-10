@@ -4,6 +4,7 @@ import { useData } from '../context/DataContext';
 import AppHeader from '../components/AppHeader.tsx';
 import NewConsultationModal from '../components/modals/NewConsultationModal';
 import EditPatientModal from '../components/modals/EditPatientModal';
+import NewReminderModal from '../components/modals/NewReminderModal';
 
 const BackArrowIcon: React.FC<{ className?: string }> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -48,6 +49,9 @@ const PatientDetail: React.FC = () => {
   const [isNewConsultationModalOpen, setIsNewConsultationModalOpen] = useState(false);
   const openNewConsultationModal = () => setIsNewConsultationModalOpen(true);
   const closeNewConsultationModal = () => setIsNewConsultationModalOpen(false);
+  const [isNewReminderModalOpen, setIsNewReminderModalOpen] = useState(false);
+  const openNewReminderModal = () => setIsNewReminderModalOpen(true);
+  const closeNewReminderModal = () => setIsNewReminderModalOpen(false);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const openEditModal = () => setIsEditModalOpen(true);
@@ -70,7 +74,7 @@ const PatientDetail: React.FC = () => {
             <button onClick={() => navigate(-1)} className="text-med-gray-600">
                 <BackArrowIcon className="h-6 w-6"/>
             </button>
-            <h1 className="text-lg font-semibold text-med-gray-800 truncate">{patient.name}</h1>
+            <h1 className="text-lg font-semibold text-med-gray-800 truncate" style={{maxWidth: 73 + 'vw'}}>{patient.name}</h1>
         </div>
         <button onClick={openEditModal} className="text-med-gray-600 hover:text-med-purple">
             <PencilIcon className="h-5 w-5"/>
@@ -99,39 +103,42 @@ const PatientDetail: React.FC = () => {
           </ul>
         </Accordion>
 
-        <div className="bg-white border border-med-gray-200 rounded-lg p-4">
-            <h2 className="font-medium text-med-gray-700 mb-2 flex justify-between items-center">
-                Histórico de consultas
-                <ChevronDownIcon className="w-5 h-5 rotate-180" />
-            </h2>
-            <div className="space-y-2">
-                {consultations.map((consultation, index) => (
-                    <Link 
-                        key={consultation.id} 
-                        to={`/patient/${patientId}/consultation/${consultation.id}`}
-                        className={`block p-3 rounded-lg ${index === 1 ? 'bg-med-gray-100' : 'hover:bg-med-gray-50'}`}
-                    >
-                        <p className="text-sm text-med-gray-700">
-                            {consultation.location}, {new Date(consultation.dateTime).toLocaleDateString('pt-BR')}, {new Date(consultation.dateTime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                    </Link>
-                ))}
-            </div>
-        </div>
+				<Accordion title="Histórico de consultas" defaultOpen="true">
+					<div className="space-y-2">
+						{consultations.map((consultation, index) => (
+								<Link 
+										key={consultation.id} 
+										to={`/patient/${patientId}/consultation/${consultation.id}`}
+										className={`block p-3 rounded-lg ${index === 1 ? 'bg-med-gray-100' : 'hover:bg-med-gray-50'}`}
+								>
+										<p className="text-sm text-med-gray-700">
+												{consultation.location}, {new Date(consultation.dateTime).toLocaleDateString('pt-BR')}, {new Date(consultation.dateTime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+										</p>
+								</Link>
+						))}
+					</div>
+					<div className="p-4 shrink-0 space-y-3">
+						<button
+							onClick={openNewConsultationModal}
+							className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-med-teal hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-med-teal"
+							aria-label="Adicionar Nova Consulta"
+							>
+							Cadastrar nova consulta
+						</button>
+            <button
+              onClick={openNewReminderModal}
+              className="w-full flex justify-center py-3 px-4 border border-med-teal rounded-md shadow-sm text-sm font-medium text-med-teal bg-white hover:bg-med-teal-light focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-med-teal"
+              aria-label="Criar novo lembrete"
+            >
+              Criar lembrete
+            </button>
+					</div>
+				</Accordion>
         
       </main>
-      
-      <button
-        onClick={openNewConsultationModal}
-        className="fixed bottom-6 right-1/2 translate-x-[11rem] md:translate-x-[12rem] h-14 w-14 bg-med-purple rounded-full text-white flex items-center justify-center shadow-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-med-purple"
-        aria-label="Adicionar Nova Consulta"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-        </svg>
-      </button>
 
       <NewConsultationModal isOpen={isNewConsultationModalOpen} onClose={closeNewConsultationModal} patient={patient} />
+      <NewReminderModal isOpen={isNewReminderModalOpen} onClose={closeNewReminderModal} patient={patient} />
       <EditPatientModal isOpen={isEditModalOpen} onClose={closeEditModal} patient={patient} />
     </div>
   );

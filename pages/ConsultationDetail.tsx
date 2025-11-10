@@ -2,6 +2,7 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useData } from '../context/DataContext';
+import AppHeader from '../components/AppHeader.tsx';
 
 const BackArrowIcon: React.FC<{ className?: string }> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -35,6 +36,7 @@ const ConsultationDetail: React.FC = () => {
   
   return (
     <div className="flex flex-col min-h-screen">
+			<AppHeader />
       <header className="sticky top-0 bg-white p-4 flex items-center space-x-4">
         <button onClick={() => navigate(-1)} className="text-med-gray-600">
           <BackArrowIcon className="h-6 w-6"/>

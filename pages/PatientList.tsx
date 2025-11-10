@@ -47,7 +47,7 @@ const PatientList: React.FC = () => {
 
       <button
         onClick={openModal}
-        className="fixed bottom-6 right-1/2 translate-x-[11rem] md:translate-x-[12rem] h-14 w-14 bg-med-purple rounded-full text-white flex items-center justify-center shadow-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-med-purple"
+        className="fixed bottom-6 right-6 h-14 w-14 bg-med-purple rounded-full text-white flex items-center justify-center shadow-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-med-purple"
         aria-label="Adicionar Novo Paciente"
       >
         <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">

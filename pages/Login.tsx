@@ -2,15 +2,21 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import LogoIcon from '../components/icons/LogoIcon';
+import { useAuth } from '../context/AuthContext';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
+  const { login, isAuthenticated } = useAuth();
+
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/patients', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, you would handle authentication here.
-    // For this demo, we'll just navigate to the home page.
-    navigate('/');
+    login();
   };
 
   return (
