@@ -1,5 +1,6 @@
 
 import type { Patient, Consultation, Reminder, User } from './types';
+import type { Exam } from './types';
 
 export const MOCK_USER: User = {
   id: 'user1',
@@ -40,5 +41,26 @@ export const MOCK_REMINDERS: Reminder[] = [
     patientId: '1',
     dateTime: '2025-10-25T12:30:00',
     note: 'Solicitar novamente tal e tal',
+  },
+];
+
+export const MOCK_EXAMS: Exam[] = [
+  {
+    id: 'e1',
+    patientId: '1',
+    dateTime: '2026-10-10T08:00:00',
+    type: 'Hemograma',
+    description: 'Exame de sangue completo',
+    result: 'Hemoglobina: 13,5 g/dL\nLeucócitos: 7.000/mm³',
+    observations: 'Paciente em jejum.',
+  },
+  {
+    id: 'e2',
+    patientId: '1',
+    dateTime: '2026-09-15T10:30:00',
+    type: 'Raio-X',
+    description: 'Raio-X do tórax',
+    result: 'Sem alterações pulmonares.',
+    observations: '',
   },
 ];

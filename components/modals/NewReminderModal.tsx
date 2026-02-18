@@ -24,10 +24,14 @@ interface NewReminderModalProps {
 const NewReminderModal: React.FC<NewReminderModalProps> = ({ isOpen, onClose, patient }) => {
     const { addReminder, patients } = useData();
 
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    // Default to tomorrow at 09:00 local time
+    const getInitialDate = () => {
+        const d = new Date();
+        d.setDate(d.getDate() + 1);
+        return d.toISOString().split('T')[0];
+    };
     
-    const [dateValue, setDateValue] = useState(tomorrow.toISOString().split('T')[0]);
+    const [dateValue, setDateValue] = useState(getInitialDate());
     const [timeValue, setTimeValue] = useState('09:00');
     const [note, setNote] = useState('');
     const [selectedPatientId, setSelectedPatientId] = useState('');
@@ -53,10 +57,12 @@ const NewReminderModal: React.FC<NewReminderModalProps> = ({ isOpen, onClose, pa
             return;
         }
         
-        const [hour, minute] = timeValue.split(':');
-        const newDateTime = new Date(dateValue);
-        newDateTime.setHours(parseInt(hour, 10));
-        newDateTime.setMinutes(parseInt(minute, 10));
+        // Construct date from local components
+        const [year, month, day] = dateValue.split('-').map(Number);
+        const [hour, minute] = timeValue.split(':').map(Number);
+        
+        // Create date object in local time
+        const newDateTime = new Date(year, month - 1, day, hour, minute);
 
         const reminderData = {
             patientId: selectedPatientId,

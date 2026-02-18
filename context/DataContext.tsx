@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { MOCK_PATIENTS, MOCK_CONSULTATIONS, MOCK_REMINDERS, MOCK_USER } from '../constants';
-import type { Patient, Consultation, Reminder, User } from '../types';
+import { MOCK_PATIENTS, MOCK_CONSULTATIONS, MOCK_REMINDERS, MOCK_USER, MOCK_EXAMS } from '../constants';
+import type { Patient, Consultation, Reminder, User, Exam } from '../types';
 
 // Helper to get data from localStorage or fall back to mock data
 const getInitialData = <T,>(key: string, mockData: T[]): T[] => {
@@ -19,24 +19,39 @@ interface DataContextType {
   patients: Patient[];
   consultations: Consultation[];
   reminders: Reminder[];
+  exams: Exam[];
   getPatientById: (id: string) => Patient | undefined;
   getConsultationsByPatientId: (patientId: string) => Consultation[];
   getConsultationByIds: (patientId: string, consultationId: string) => Consultation | undefined;
-  getReminders: () => Reminder[];
+  getExamsByPatientId: (patientId: string) => Exam[];
   addPatient: (patient: Omit<Patient, 'id'>) => void;
   updatePatient: (patient: Patient) => void;
   addConsultation: (consultation: Omit<Consultation, 'id'>) => void;
+  addExam: (exam: Omit<Exam, 'id'>) => void;
   addReminder: (reminder: Omit<Reminder, 'id'>) => void;
   updateReminder: (reminder: Reminder) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export function DataProvider({ children }: { children: React.ReactNode }) {
+
   const [patients, setPatients] = useState<Patient[]>(() => getInitialData('mednote_patients', MOCK_PATIENTS));
   const [consultations, setConsultations] = useState<Consultation[]>(() => getInitialData('mednote_consultations', MOCK_CONSULTATIONS));
   const [reminders, setReminders] = useState<Reminder[]>(() => getInitialData('mednote_reminders', MOCK_REMINDERS));
+  const [exams, setExams] = useState<Exam[]>(() => getInitialData('mednote_exams', MOCK_EXAMS));
   const [user] = useState<User>(MOCK_USER);
+  useEffect(() => {
+    localStorage.setItem('mednote_exams', JSON.stringify(exams));
+  }, [exams]);
+  const getExamsByPatientId = (patientId: string) =>
+    exams.filter(e => e.patientId === patientId)
+      .sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
+
+  const addExam = (examData: Omit<Exam, 'id'>) => {
+    const newExam: Exam = { ...examData, id: crypto.randomUUID() };
+    setExams(prev => [...prev, newExam]);
+  };
 
   useEffect(() => {
     localStorage.setItem('mednote_patients', JSON.stringify(patients));
@@ -91,13 +106,16 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     patients,
     consultations,
     reminders,
+    exams,
     getPatientById,
     getConsultationsByPatientId,
     getConsultationByIds,
+    getExamsByPatientId,
     getReminders,
     addPatient,
     updatePatient,
     addConsultation,
+    addExam,
     addReminder,
     updateReminder,
   };

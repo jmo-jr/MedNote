@@ -31,11 +31,14 @@ const ReminderDetailModal: React.FC<ReminderDetailModalProps> = ({ isOpen, onClo
     useEffect(() => {
         if (reminder) {
             const reminderDate = new Date(reminder.dateTime);
-            setDateValue(reminderDate.toISOString().split('T')[0]); // YYYY-MM-DD
-            setTimeValue(reminderDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
+            // Format for local date input
+            const localDate = reminderDate.toLocaleDateString('en-CA'); // YYYY-MM-DD
+            const localTime = reminderDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            setDateValue(localDate);
+            setTimeValue(localTime);
             setNote(reminder.note);
         }
-    }, [reminder]);
+    }, [reminder, isOpen]);
 
     if (!isOpen || !reminder) {
         return null;
@@ -45,10 +48,9 @@ const ReminderDetailModal: React.FC<ReminderDetailModalProps> = ({ isOpen, onClo
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const [hour, minute] = timeValue.split(':');
-        const newDateTime = new Date(dateValue);
-        newDateTime.setHours(parseInt(hour, 10));
-        newDateTime.setMinutes(parseInt(minute, 10));
+        const [year, month, day] = dateValue.split('-').map(Number);
+        const [hour, minute] = timeValue.split(':').map(Number);
+        const newDateTime = new Date(year, month - 1, day, hour, minute);
 
         const updatedReminderData: Reminder = {
             ...reminder,

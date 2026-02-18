@@ -5,6 +5,7 @@ import AppHeader from '../components/AppHeader.tsx';
 import NewConsultationModal from '../components/modals/NewConsultationModal';
 import EditPatientModal from '../components/modals/EditPatientModal';
 import NewReminderModal from '../components/modals/NewReminderModal';
+import NewExamModal from '../components/modals/NewExamModal';
 
 const BackArrowIcon: React.FC<{ className?: string }> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -41,11 +42,12 @@ const Accordion: React.FC<{ title: string; children: React.ReactNode, defaultOpe
   );
 };
 
+
 const PatientDetail: React.FC = () => {
   const { patientId } = useParams<{ patientId: string }>();
   const navigate = useNavigate();
-  const { getPatientById, getConsultationsByPatientId } = useData();
-  
+  const { getPatientById, getConsultationsByPatientId, getExamsByPatientId } = useData();
+
   const [isNewConsultationModalOpen, setIsNewConsultationModalOpen] = useState(false);
   const openNewConsultationModal = () => setIsNewConsultationModalOpen(true);
   const closeNewConsultationModal = () => setIsNewConsultationModalOpen(false);
@@ -57,14 +59,24 @@ const PatientDetail: React.FC = () => {
   const openEditModal = () => setIsEditModalOpen(true);
   const closeEditModal = () => setIsEditModalOpen(false);
 
+  // Novo estado para modal de exame
+  const [isNewExamModalOpen, setIsNewExamModalOpen] = useState(false);
+  const openNewExamModal = () => setIsNewExamModalOpen(true);
+  const closeNewExamModal = () => setIsNewExamModalOpen(false);
+
   const patient = getPatientById(patientId!);
   const consultations = getConsultationsByPatientId(patientId!);
+  const exams = getExamsByPatientId(patientId!);
 
   if (!patient) {
     return <div>Paciente não encontrado.</div>;
   }
-  
-  const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('pt-BR');
+
+  const formatDate = (dateString: string) => {
+    // Input dates for patients are YYYY-MM-DD. We force local interpretation.
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(year, month - 1, day).toLocaleDateString('pt-BR');
+  };
 
   return (
     <div className="flex flex-col h-screen">
@@ -103,28 +115,51 @@ const PatientDetail: React.FC = () => {
           </ul>
         </Accordion>
 
-				<Accordion title="Histórico de consultas" defaultOpen="true">
-					<div className="space-y-2">
-						{consultations.map((consultation, index) => (
-								<Link 
-										key={consultation.id} 
-										to={`/patient/${patientId}/consultation/${consultation.id}`}
-										className={`block p-3 rounded-lg ${index === 1 ? 'bg-med-gray-100' : 'hover:bg-med-gray-50'}`}
-								>
-										<p className="text-sm text-med-gray-700">
-												{consultation.location}, {new Date(consultation.dateTime).toLocaleDateString('pt-BR')}, {new Date(consultation.dateTime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-										</p>
-								</Link>
-						))}
-					</div>
-					<div className="p-4 shrink-0 space-y-3">
-						<button
-							onClick={openNewConsultationModal}
-							className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-med-teal hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-med-teal"
-							aria-label="Adicionar Nova Consulta"
-							>
-							Cadastrar nova consulta
-						</button>
+        <Accordion title="Histórico de exames" defaultOpen={false}>
+          <div className="space-y-2">
+            {exams.length === 0 && <div className="text-sm text-med-gray-500">Nenhum exame cadastrado.</div>}
+            {exams.map((exam, index) => (
+              <div key={exam.id} className={`block p-3 rounded-lg ${index === 1 ? 'bg-med-gray-100' : 'hover:bg-med-gray-50'}`}>
+                <div className="text-sm text-med-gray-700 font-semibold">
+									{new Date(exam.dateTime).toLocaleDateString('pt-BR')} - {exam.type}
+								</div>
+                <div className="text-xs text-med-gray-600">{exam.description}</div>
+              </div>
+            ))}
+          </div>
+          <div className="p-4 shrink-0 space-y-3">
+            <button
+              onClick={openNewExamModal}
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-med-teal hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-med-teal"
+              aria-label="Adicionar Novo Exame"
+            >
+              Cadastrar novo exame
+            </button>
+          </div>
+        </Accordion>
+				
+        <Accordion title="Histórico de consultas" defaultOpen={true}>
+          <div className="space-y-2">
+            {consultations.map((consultation, index) => (
+              <Link
+                key={consultation.id}
+                to={`/patient/${patientId}/consultation/${consultation.id}`}
+                className={`block p-3 rounded-lg ${index === 1 ? 'bg-med-gray-100' : 'hover:bg-med-gray-50'}`}
+              >
+                <p className="text-sm text-med-gray-700">
+                  {consultation.location}, {new Date(consultation.dateTime).toLocaleDateString('pt-BR')}, {new Date(consultation.dateTime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                </p>
+              </Link>
+            ))}
+          </div>
+          <div className="p-4 shrink-0 space-y-3">
+            <button
+              onClick={openNewConsultationModal}
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-med-teal hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-med-teal"
+              aria-label="Adicionar Nova Consulta"
+            >
+              Cadastrar nova consulta
+            </button>
             <button
               onClick={openNewReminderModal}
               className="w-full flex justify-center py-3 px-4 border border-med-teal rounded-md shadow-sm text-sm font-medium text-med-teal bg-white hover:bg-med-teal-light focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-med-teal"
@@ -132,14 +167,15 @@ const PatientDetail: React.FC = () => {
             >
               Criar lembrete
             </button>
-					</div>
-				</Accordion>
+          </div>
+        </Accordion>
         
       </main>
 
       <NewConsultationModal isOpen={isNewConsultationModalOpen} onClose={closeNewConsultationModal} patient={patient} />
       <NewReminderModal isOpen={isNewReminderModalOpen} onClose={closeNewReminderModal} patient={patient} />
       <EditPatientModal isOpen={isEditModalOpen} onClose={closeEditModal} patient={patient} />
+      <NewExamModal isOpen={isNewExamModalOpen} onClose={closeNewExamModal} patient={patient} />
     </div>
   );
 };

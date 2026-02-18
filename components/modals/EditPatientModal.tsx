@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useData } from '../../context/DataContext';
 import type { Patient } from '../../types';
@@ -24,22 +25,21 @@ const FormInput: React.FC<{ label: string; id: string; type: string; value: stri
     </div>
 );
 
-const Checkbox: React.FC<{ label: string; id: string; checked: boolean; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }> = ({ label, id, checked, onChange }) => (
-    <div className="flex items-center">
-        <input
-            id={id}
-            name={id}
-            type="checkbox"
-            checked={checked}
-            onChange={onChange}
-            className="h-4 w-4 text-med-purple border-med-gray-300 rounded focus:ring-med-purple"
-        />
-        <label htmlFor={id} className="ml-3 block text-sm font-medium text-med-gray-700">
+const FormTextarea: React.FC<{ label: string; id: string; value: string; onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void; rows?: number; placeholder?: string }> = ({ label, id, value, onChange, rows = 4, placeholder }) => (
+    <div>
+        <label htmlFor={id} className="block text-sm font-medium text-med-gray-700">
             {label}
         </label>
+        <textarea
+            id={id}
+            value={value}
+            onChange={onChange}
+            rows={rows}
+            placeholder={placeholder}
+            className="mt-1 block w-full px-3 py-2 bg-white border border-med-gray-300 rounded-md shadow-sm placeholder-med-gray-400 focus:outline-none focus:ring-med-teal focus:border-med-teal text-med-gray-900"
+        />
     </div>
 );
-
 
 interface EditPatientModalProps {
     isOpen: boolean;
@@ -54,18 +54,8 @@ const EditPatientModal: React.FC<EditPatientModalProps> = ({ isOpen, onClose, pa
     const [dob, setDob] = useState('');
     const [phone, setPhone] = useState('');
     const [email, setEmail] = useState('');
-    const [diseases, setDiseases] = useState<Record<string, boolean>>({});
-    const [meds, setMeds] = useState<Record<string, boolean>>({});
-    
-    const chronicDiseaseOptions = ['DM2', 'HAS', 'Hiperlipidemia Mista', 'Alzheimer', 'Câncer', 'Diabetes'];
-    const continuousMedicationOptions = ['Astorvastatina', 'Insulina', 'Losartana', 'Rosuvastatina Cálcica'];
-
-    const arrayToCheckboxState = (options: string[], selected: string[]): Record<string, boolean> => {
-        return options.reduce((acc, option) => {
-            acc[option] = selected.includes(option);
-            return acc;
-        }, {} as Record<string, boolean>);
-    };
+    const [chronicDiseasesInput, setChronicDiseasesInput] = useState('');
+    const [continuousMedicationInput, setContinuousMedicationInput] = useState('');
 
     useEffect(() => {
         if (patient) {
@@ -73,8 +63,8 @@ const EditPatientModal: React.FC<EditPatientModalProps> = ({ isOpen, onClose, pa
             setDob(patient.dob);
             setPhone(patient.phone);
             setEmail(patient.email);
-            setDiseases(arrayToCheckboxState(chronicDiseaseOptions, patient.chronicDiseases));
-            setMeds(arrayToCheckboxState(continuousMedicationOptions, patient.continuousMedication));
+            setChronicDiseasesInput(patient.chronicDiseases.join('\n'));
+            setContinuousMedicationInput(patient.continuousMedication.join('\n'));
         }
     }, [patient, isOpen]);
 
@@ -82,13 +72,12 @@ const EditPatientModal: React.FC<EditPatientModalProps> = ({ isOpen, onClose, pa
     if (!isOpen) {
         return null;
     }
-    
-    const handleDiseaseChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setDiseases({ ...diseases, [e.target.name]: e.target.checked });
-    };
 
-    const handleMedChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setMeds({ ...meds, [e.target.name]: e.target.checked });
+    const processInputToArray = (text: string) => {
+        return text
+            .split(/[\n,]+/)
+            .map(item => item.trim())
+            .filter(item => item !== '');
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -99,8 +88,8 @@ const EditPatientModal: React.FC<EditPatientModalProps> = ({ isOpen, onClose, pa
             dob,
             phone,
             email,
-            chronicDiseases: Object.keys(diseases).filter(k => diseases[k]),
-            continuousMedication: Object.keys(meds).filter(k => meds[k]),
+            chronicDiseases: processInputToArray(chronicDiseasesInput),
+            continuousMedication: processInputToArray(continuousMedicationInput),
         };
         updatePatient(patientData);
         onClose();
@@ -130,23 +119,21 @@ const EditPatientModal: React.FC<EditPatientModalProps> = ({ isOpen, onClose, pa
                     <FormInput label="Telefone" id="phone" type="tel" value={phone} onChange={e => setPhone(e.target.value)} />
                     <FormInput label="E-mail" id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} />
 
-                    <div>
-                        <p className="block text-sm font-medium text-med-gray-700 mb-2">Doenças Crônicas?</p>
-                        <div className="space-y-3">
-                            {chronicDiseaseOptions.map((disease) => (
-                                <Checkbox key={disease} id={disease} label={disease} checked={!!diseases[disease]} onChange={handleDiseaseChange} />
-                            ))}
-                        </div>
-                    </div>
+                    <FormTextarea 
+                        label="Doenças Crônicas" 
+                        id="chronicDiseases" 
+                        value={chronicDiseasesInput} 
+                        onChange={e => setChronicDiseasesInput(e.target.value)}
+                        placeholder="Uma por linha ou separadas por vírgula"
+                    />
 
-                    <div>
-                        <p className="block text-sm font-medium text-med-gray-700 mb-2">Remédios de uso contínuo?</p>
-                        <div className="space-y-3">
-                            {continuousMedicationOptions.map((med) => (
-                                <Checkbox key={med} id={med} label={med} checked={!!meds[med]} onChange={handleMedChange} />
-                            ))}
-                        </div>
-                    </div>
+                    <FormTextarea 
+                        label="Remédios de uso contínuo" 
+                        id="continuousMedication" 
+                        value={continuousMedicationInput} 
+                        onChange={e => setContinuousMedicationInput(e.target.value)}
+                        placeholder="Uma por linha ou separadas por vírgula"
+                    />
                 </form>
 
                 <div className="p-6 border-t border-med-gray-200 shrink-0">

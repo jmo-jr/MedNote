@@ -35,12 +35,21 @@ interface NewConsultationModalProps {
 const NewConsultationModal: React.FC<NewConsultationModalProps> = ({ isOpen, onClose, patient }) => {
     const { addConsultation } = useData();
 
+    // Helper to get local ISO string for datetime-local input
+    const getLocalISOString = () => {
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        return now.toISOString().slice(0, 16);
+    };
+
     const [location, setLocation] = useState('PSF');
-    const [dateTime, setDateTime] = useState(new Date().toISOString().slice(0, 16));
+    const [dateTime, setDateTime] = useState(getLocalISOString());
     const [subjective, setSubjective] = useState('');
     const [objective, setObjective] = useState('');
     const [assessment, setAssessment] = useState('');
     const [plan, setPlan] = useState('');
+    const [examRequests, setExamRequests] = useState('');
+    const [examResults, setExamResults] = useState('');
     const [observations, setObservations] = useState('');
     const [isNewReminderModalOpen, setIsNewReminderModalOpen] = useState(false);
 
@@ -54,15 +63,25 @@ const NewConsultationModal: React.FC<NewConsultationModalProps> = ({ isOpen, onC
         const consultationData = {
             patientId: patient.id,
             location,
-            dateTime,
+            dateTime: new Date(dateTime).toISOString(), // Save as UTC ISO
             subjective,
             objective,
             assessment,
             plan,
+            examRequests,
+            examResults,
             observations
         };
         addConsultation(consultationData);
         onClose();
+        // Reset local state for next use
+        setSubjective('');
+        setObjective('');
+        setAssessment('');
+        setPlan('');
+        setExamRequests('');
+        setExamResults('');
+        setObservations('');
     };
     
     return (
@@ -105,6 +124,10 @@ const NewConsultationModal: React.FC<NewConsultationModalProps> = ({ isOpen, onC
                         <FormTextarea label="Objetiva" id="objective" value={objective} onChange={e => setObjective(e.target.value)} rows={4} />
                         <FormTextarea label="Avaliação" id="assessment" value={assessment} onChange={e => setAssessment(e.target.value)} rows={2} />
                         <FormTextarea label="Plano" id="plan" value={plan} onChange={e => setPlan(e.target.value)} rows={2} />
+                        
+                        <FormTextarea label="Solicitação de Exames" id="examRequests" value={examRequests} onChange={e => setExamRequests(e.target.value)} rows={2} />
+                        <FormTextarea label="Resultados de Exames" id="examResults" value={examResults} onChange={e => setExamResults(e.target.value)} rows={2} />
+                        
                         <FormTextarea label="Observações" id="observations" value={observations} onChange={e => setObservations(e.target.value)} rows={2} />
                     </form>
 

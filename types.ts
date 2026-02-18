@@ -34,3 +34,13 @@ export interface Reminder {
   dateTime: string;
   note: string;
 }
+
+export interface Exam {
+  id: string;
+  patientId: string;
+  dateTime: string;
+  type: string;
+  description: string;
+  result: string;
+  observations?: string;
+}
