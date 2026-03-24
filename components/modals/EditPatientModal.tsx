@@ -128,7 +128,7 @@ const EditPatientModal: React.FC<EditPatientModalProps> = ({ isOpen, onClose, pa
                     />
 
                     <FormTextarea 
-                        label="Remédios de uso contínuo" 
+                        label="Medicações de uso contínuo" 
                         id="continuousMedication" 
                         value={continuousMedicationInput} 
                         onChange={e => setContinuousMedicationInput(e.target.value)}

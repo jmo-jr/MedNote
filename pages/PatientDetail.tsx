@@ -109,7 +109,7 @@ const PatientDetail: React.FC = () => {
           </ul>
         </Accordion>
         
-        <Accordion title="Remédios de uso controlado">
+        <Accordion title="Medicações de uso contínuo">
           <ul className="list-disc list-inside text-sm space-y-1">
             {patient.continuousMedication.map(m => <li key={m}>{m}</li>)}
           </ul>
