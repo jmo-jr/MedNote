@@ -1,18 +1,16 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { MOCK_PATIENTS, MOCK_CONSULTATIONS, MOCK_REMINDERS, MOCK_USER, MOCK_EXAMS } from '../constants';
-import type { Patient, Consultation, Reminder, User, Exam } from '../types';
-
-// Helper to get data from localStorage or fall back to mock data
-const getInitialData = <T,>(key: string, mockData: T[]): T[] => {
-  try {
-    const item = window.localStorage.getItem(key);
-    return item ? JSON.parse(item) : mockData;
-  } catch (error) {
-    console.error(`Error reading from localStorage key “${key}”:`, error);
-    return mockData;
-  }
-};
-
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import {
+  collection,
+  doc,
+  onSnapshot,
+  setDoc,
+  type DocumentData,
+  type QuerySnapshot,
+} from 'firebase/firestore';
+import { MOCK_CONSULTATIONS, MOCK_EXAMS, MOCK_PATIENTS, MOCK_REMINDERS, MOCK_USER } from '../constants';
+import { db, isFirebaseConfigured } from '../services/firebase';
+import { useAuth } from './AuthContext';
+import type { Consultation, Exam, Patient, Reminder, User } from '../types';
 
 interface DataContextType {
   user: User;
@@ -24,6 +22,7 @@ interface DataContextType {
   getConsultationsByPatientId: (patientId: string) => Consultation[];
   getConsultationByIds: (patientId: string, consultationId: string) => Consultation | undefined;
   getExamsByPatientId: (patientId: string) => Exam[];
+  getReminders: () => Reminder[];
   addPatient: (patient: Omit<Patient, 'id'>) => void;
   updatePatient: (patient: Patient) => void;
   addConsultation: (consultation: Omit<Consultation, 'id'>) => void;
@@ -34,94 +33,212 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
+const fallbackUserId = import.meta.env.VITE_FIREBASE_USER_ID || MOCK_USER.id;
+
+const sortDateAsc = <T extends { dateTime: string }>(items: T[]) =>
+  [...items].sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
+
+const sortDateDesc = <T extends { dateTime: string }>(items: T[]) =>
+  [...items].sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
+
+const mapSnapshot = <T extends { id: string }>(snapshot: QuerySnapshot<DocumentData>): T[] =>
+  snapshot.docs.map((entry) => ({ ...(entry.data() as Omit<T, 'id'>), id: entry.id }));
+
+const getInitials = (name: string) =>
+  name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || '')
+    .join('') || 'MN';
+
 export function DataProvider({ children }: { children: React.ReactNode }) {
+  const { firebaseUser, firebaseUserId, isAuthLoading } = useAuth();
+  const activeUserId = isFirebaseConfigured ? firebaseUserId : fallbackUserId;
 
-  const [patients, setPatients] = useState<Patient[]>(() => getInitialData('mednote_patients', MOCK_PATIENTS));
-  const [consultations, setConsultations] = useState<Consultation[]>(() => getInitialData('mednote_consultations', MOCK_CONSULTATIONS));
-  const [reminders, setReminders] = useState<Reminder[]>(() => getInitialData('mednote_reminders', MOCK_REMINDERS));
-  const [exams, setExams] = useState<Exam[]>(() => getInitialData('mednote_exams', MOCK_EXAMS));
-  const [user] = useState<User>(MOCK_USER);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [consultations, setConsultations] = useState<Consultation[]>([]);
+  const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [exams, setExams] = useState<Exam[]>([]);
+  const [user, setUser] = useState<User>({ ...MOCK_USER, id: activeUserId || fallbackUserId });
+
   useEffect(() => {
-    localStorage.setItem('mednote_exams', JSON.stringify(exams));
-  }, [exams]);
-  const getExamsByPatientId = (patientId: string) =>
-    exams.filter(e => e.patientId === patientId)
-      .sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
+    if (!db || !isFirebaseConfigured) {
+      console.warn('Firestore nao configurado. Carregando dados mock em memoria.');
+      setPatients(MOCK_PATIENTS);
+      setConsultations(MOCK_CONSULTATIONS);
+      setReminders(MOCK_REMINDERS);
+      setExams(MOCK_EXAMS);
+      setUser({ ...MOCK_USER, id: fallbackUserId });
+      return;
+    }
 
-  const addExam = (examData: Omit<Exam, 'id'>) => {
-    const newExam: Exam = { ...examData, id: crypto.randomUUID() };
-    setExams(prev => [...prev, newExam]);
+    if (isAuthLoading) {
+      return;
+    }
+
+    if (!activeUserId) {
+      setPatients([]);
+      setConsultations([]);
+      setReminders([]);
+      setExams([]);
+      setUser({ ...MOCK_USER, id: '' });
+      return;
+    }
+
+    const userRef = doc(db, 'users', activeUserId);
+    const fallbackName = firebaseUser?.displayName || MOCK_USER.name;
+    const fallbackEmail = firebaseUser?.email || MOCK_USER.email;
+
+    const unsubscribeUser = onSnapshot(userRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data() as User;
+        const resolvedName = data.name || fallbackName;
+        setUser({
+          id: snapshot.id,
+          name: resolvedName,
+          email: data.email || fallbackEmail,
+          initials: data.initials || getInitials(resolvedName),
+        });
+        return;
+      }
+
+      const initialUser: User = {
+        id: activeUserId,
+        name: fallbackName,
+        email: fallbackEmail,
+        initials: getInitials(fallbackName),
+      };
+
+      setUser(initialUser);
+      void setDoc(userRef, initialUser, { merge: true }).catch((error) => {
+        console.error('Erro ao criar documento do usuario no Firestore:', error);
+      });
+    });
+
+    const unsubscribePatients = onSnapshot(collection(userRef, 'patients'), (snapshot) => {
+      setPatients(mapSnapshot<Patient>(snapshot));
+    });
+
+    const unsubscribeConsultations = onSnapshot(collection(userRef, 'consultations'), (snapshot) => {
+      setConsultations(mapSnapshot<Consultation>(snapshot));
+    });
+
+    const unsubscribeReminders = onSnapshot(collection(userRef, 'reminders'), (snapshot) => {
+      setReminders(mapSnapshot<Reminder>(snapshot));
+    });
+
+    const unsubscribeExams = onSnapshot(collection(userRef, 'exams'), (snapshot) => {
+      setExams(mapSnapshot<Exam>(snapshot));
+    });
+
+    return () => {
+      unsubscribeUser();
+      unsubscribePatients();
+      unsubscribeConsultations();
+      unsubscribeReminders();
+      unsubscribeExams();
+    };
+  }, [activeUserId, firebaseUser?.displayName, firebaseUser?.email, isAuthLoading]);
+
+  const writeDocument = async <T extends { id: string }>(collectionName: string, payload: T) => {
+    if (!db || !isFirebaseConfigured || !activeUserId) {
+      return;
+    }
+
+    const ref = doc(db, 'users', activeUserId, collectionName, payload.id);
+    await setDoc(ref, payload, { merge: true });
   };
 
-  useEffect(() => {
-    localStorage.setItem('mednote_patients', JSON.stringify(patients));
-  }, [patients]);
+  const getPatientById = (id: string) => patients.find((patient) => patient.id === id);
 
-  useEffect(() => {
-    localStorage.setItem('mednote_consultations', JSON.stringify(consultations));
-  }, [consultations]);
-  
-  useEffect(() => {
-    localStorage.setItem('mednote_reminders', JSON.stringify(reminders));
-  }, [reminders]);
+  const getConsultationsByPatientId = (patientId: string) =>
+    sortDateDesc(consultations.filter((consultation) => consultation.patientId === patientId));
 
+  const getConsultationByIds = (patientId: string, consultationId: string) =>
+    consultations.find(
+      (consultation) => consultation.patientId === patientId && consultation.id === consultationId
+    );
 
-  const getPatientById = (id: string) => patients.find(p => p.id === id);
-  
-  const getConsultationsByPatientId = (patientId: string) => 
-    consultations.filter(c => c.patientId === patientId)
-                 .sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
-  
-  const getConsultationByIds = (patientId: string, consultationId: string) => 
-    consultations.find(c => c.patientId === patientId && c.id === consultationId);
+  const getExamsByPatientId = (patientId: string) =>
+    sortDateDesc(exams.filter((exam) => exam.patientId === patientId));
 
-  const getReminders = () => reminders.sort((a,b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
+  const getReminders = () => sortDateAsc(reminders);
 
   const addPatient = (patientData: Omit<Patient, 'id'>) => {
     const newPatient: Patient = { ...patientData, id: crypto.randomUUID() };
-    setPatients(prev => [...prev, newPatient]);
+    setPatients((previous) => [...previous, newPatient]);
+    void writeDocument('patients', newPatient).catch((error) => {
+      console.error('Erro ao salvar paciente no Firestore:', error);
+    });
   };
-  
+
   const updatePatient = (updatedPatient: Patient) => {
-      setPatients(prev => prev.map(p => p.id === updatedPatient.id ? updatedPatient : p));
+    setPatients((previous) =>
+      previous.map((patient) => (patient.id === updatedPatient.id ? updatedPatient : patient))
+    );
+    void writeDocument('patients', updatedPatient).catch((error) => {
+      console.error('Erro ao atualizar paciente no Firestore:', error);
+    });
   };
 
   const addConsultation = (consultationData: Omit<Consultation, 'id'>) => {
-      const newConsultation: Consultation = { ...consultationData, id: crypto.randomUUID() };
-      setConsultations(prev => [...prev, newConsultation]);
+    const newConsultation: Consultation = { ...consultationData, id: crypto.randomUUID() };
+    setConsultations((previous) => [...previous, newConsultation]);
+    void writeDocument('consultations', newConsultation).catch((error) => {
+      console.error('Erro ao salvar consulta no Firestore:', error);
+    });
+  };
+
+  const addExam = (examData: Omit<Exam, 'id'>) => {
+    const newExam: Exam = { ...examData, id: crypto.randomUUID() };
+    setExams((previous) => [...previous, newExam]);
+    void writeDocument('exams', newExam).catch((error) => {
+      console.error('Erro ao salvar exame no Firestore:', error);
+    });
   };
 
   const addReminder = (reminderData: Omit<Reminder, 'id'>) => {
     const newReminder: Reminder = { ...reminderData, id: crypto.randomUUID() };
-    setReminders(prev => [...prev, newReminder]);
+    setReminders((previous) => [...previous, newReminder]);
+    void writeDocument('reminders', newReminder).catch((error) => {
+      console.error('Erro ao salvar lembrete no Firestore:', error);
+    });
   };
-  
+
   const updateReminder = (updatedReminder: Reminder) => {
-      setReminders(prev => prev.map(r => r.id === updatedReminder.id ? updatedReminder : r));
+    setReminders((previous) =>
+      previous.map((reminder) => (reminder.id === updatedReminder.id ? updatedReminder : reminder))
+    );
+    void writeDocument('reminders', updatedReminder).catch((error) => {
+      console.error('Erro ao atualizar lembrete no Firestore:', error);
+    });
   };
 
-
-  const value = {
-    user,
-    patients,
-    consultations,
-    reminders,
-    exams,
-    getPatientById,
-    getConsultationsByPatientId,
-    getConsultationByIds,
-    getExamsByPatientId,
-    getReminders,
-    addPatient,
-    updatePatient,
-    addConsultation,
-    addExam,
-    addReminder,
-    updateReminder,
-  };
+  const value = useMemo(
+    () => ({
+      user,
+      patients,
+      consultations,
+      reminders,
+      exams,
+      getPatientById,
+      getConsultationsByPatientId,
+      getConsultationByIds,
+      getExamsByPatientId,
+      getReminders,
+      addPatient,
+      updatePatient,
+      addConsultation,
+      addExam,
+      addReminder,
+      updateReminder,
+    }),
+    [user, patients, consultations, reminders, exams]
+  );
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
-};
+}
 
 export const useData = () => {
   const context = useContext(DataContext);

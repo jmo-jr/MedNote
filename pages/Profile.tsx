@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useData } from '../context/DataContext';
+import { useAuth } from '../context/AuthContext';
 import AppHeader from '../components/AppHeader';
 
 const PencilIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -13,12 +14,18 @@ const PencilIcon: React.FC<{ className?: string }> = ({ className }) => (
 
 const Profile: React.FC = () => {
     const { user } = useData();
+    const { logout } = useAuth();
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('edit');
 
     const handleSave = () => {
         // Save logic here
         navigate(-1);
+    };
+
+    const handleLogout = async () => {
+        await logout();
+        navigate('/login', { replace: true });
     };
 
     return (
@@ -104,6 +111,12 @@ const Profile: React.FC = () => {
                 )}
             </main>
             <footer className="p-4 bg-white sticky bottom-0">
+                <button
+                    onClick={handleLogout}
+                    className="w-full mb-3 flex justify-center py-3 px-4 border border-med-gray-300 rounded-md shadow-sm text-sm font-medium text-med-gray-700 bg-white hover:bg-med-gray-50"
+                >
+                    Sair
+                </button>
                 <button
                     onClick={handleSave}
                     className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-med-teal hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-med-teal"

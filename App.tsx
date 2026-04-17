@@ -13,7 +13,15 @@ import { DataProvider } from './context/DataContext';
 import { useAuth } from './context/AuthContext';
 
 const App: React.FC = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isAuthLoading } = useAuth();
+
+  if (isAuthLoading) {
+    return (
+      <div className="bg-gray-50 min-h-screen font-sans flex items-center justify-center">
+        <div className="text-med-gray-600 text-sm">Carregando autenticacao...</div>
+      </div>
+    );
+  }
 
   const ProtectedRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
     if (!isAuthenticated) {

@@ -15,6 +15,12 @@ View your app in AI Studio: https://ai.studio/apps/drive/1cJPThtguwqoAzAtsskTyPR
 
 1. Install dependencies:
    `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+2. Copy [.env.example](.env.example) to [.env.local](.env.local) and set your keys (`GEMINI_API_KEY` + `VITE_FIREBASE_*`)
 3. Run the app:
    `npm run dev`
+
+## Firestore Setup
+
+Para configurar colecoes, regras, indices e seed no Firebase, veja:
+
+- [firebase/README.md](firebase/README.md)
