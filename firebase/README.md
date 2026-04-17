@@ -39,6 +39,7 @@ No Firebase Console:
 
 - `Build` > `Authentication` > `Sign-in method`
 - Ative o provedor `Email/Password`
+- Em `Settings` > `Authorized domains`, adicione `jmo-jr.github.io` (ou seu dominio publicado)
 
 ## 5. Vincular projeto Firebase
 
@@ -77,6 +78,18 @@ FIREBASE_USER_ID=<uid-do-medico> npm run firebase:seed
 ```
 
 Importante: para o usuario logado enxergar os dados, o `FIREBASE_USER_ID` do seed precisa ser o mesmo `uid` criado no Authentication.
+
+## Deploy no GitHub Pages (GitHub Actions)
+
+No repositorio do GitHub, configure em `Settings` > `Secrets and variables` > `Actions`:
+
+- `VITE_FIREBASE_API_KEY`
+- `VITE_FIREBASE_AUTH_DOMAIN`
+- `VITE_FIREBASE_PROJECT_ID`
+- `VITE_FIREBASE_STORAGE_BUCKET`
+- `VITE_FIREBASE_MESSAGING_SENDER_ID`
+- `VITE_FIREBASE_APP_ID`
+- `VITE_FIREBASE_USER_ID` (opcional)
 
 ## Arquivos desta pasta
 
