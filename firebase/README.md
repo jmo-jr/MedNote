@@ -50,7 +50,7 @@ npx firebase use --add
 ## 6. Publicar regras e indices
 
 ```bash
-npx firebase deploy --only firestore:rules,firestore:indexes
+npx firebase deploy --only firestore:rules,firestore:indexes,storage
 ```
 
 ## 7. Popular colecoes com seed
@@ -95,4 +95,5 @@ No repositorio do GitHub, configure em `Settings` > `Secrets and variables` > `A
 
 - `firebase/firestore.rules`: regras de seguranca (usuario so acessa seus dados)
 - `firebase/firestore.indexes.json`: indices compostos para consultas por paciente e data
+- `firebase/storage.rules`: regras para upload da foto de perfil em `users/{uid}/profile/*`
 - `firebase/seed-data.json`: dados iniciais baseados no mock atual do app

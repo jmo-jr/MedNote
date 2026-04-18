@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import AppHeader from '../components/AppHeader';
@@ -13,19 +13,73 @@ const PencilIcon: React.FC<{ className?: string }> = ({ className }) => (
 );
 
 const Profile: React.FC = () => {
-    const { user } = useData();
+    const { user, updateUser, uploadUserPhoto } = useData();
     const { logout } = useAuth();
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('edit');
+    const [name, setName] = useState(user.name);
+    const [email, setEmail] = useState(user.email);
+    const [isSaving, setIsSaving] = useState(false);
+    const [saveError, setSaveError] = useState<string | null>(null);
+    const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+    const [photoError, setPhotoError] = useState<string | null>(null);
+    const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
-    const handleSave = () => {
-        // Save logic here
-        navigate(-1);
+    React.useEffect(() => {
+        setName(user.name);
+        setEmail(user.email);
+    }, [user.name, user.email]);
+
+    const handleSave = async () => {
+        setSaveError(null);
+        setIsSaving(true);
+        try {
+            await updateUser({ name, email });
+            navigate(-1);
+        } catch {
+            setSaveError('Nao foi possivel salvar as alteracoes.');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const handleLogout = async () => {
         await logout();
         navigate('/login', { replace: true });
+    };
+
+    const handleSelectPhoto = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handlePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) {
+            return;
+        }
+
+        if (!file.type.startsWith('image/')) {
+            setPhotoError('Selecione um arquivo de imagem valido.');
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            setPhotoError('A imagem deve ter no maximo 5MB.');
+            return;
+        }
+
+        setPhotoError(null);
+        setIsUploadingPhoto(true);
+        try {
+            await uploadUserPhoto(file);
+        } catch {
+            setPhotoError('Nao foi possivel enviar a foto.');
+        } finally {
+            setIsUploadingPhoto(false);
+            if (event.target) {
+                event.target.value = '';
+            }
+        }
     };
 
     return (
@@ -35,12 +89,35 @@ const Profile: React.FC = () => {
                 <h2 className="text-2xl font-bold mb-6">Perfil</h2>
 
                 <div className="relative mb-6">
-                    <div className="w-32 h-32 bg-med-gray-300 rounded-full flex items-center justify-center font-bold text-4xl text-med-gray-600 mx-auto">
-                        {user.initials}
-                    </div>
-                    <button className="absolute bottom-0 right-1/2 translate-x-12 h-8 w-8 bg-med-purple rounded-full text-white flex items-center justify-center shadow-md">
+                    {user.photoURL ? (
+                        <img
+                            src={user.photoURL}
+                            alt={`Foto de perfil de ${user.name}`}
+                            className="w-32 h-32 rounded-full object-cover bg-med-gray-300 mx-auto"
+                        />
+                    ) : (
+                        <div className="w-32 h-32 bg-med-gray-300 rounded-full flex items-center justify-center font-bold text-4xl text-med-gray-600 mx-auto">
+                            {user.initials}
+                        </div>
+                    )}
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handlePhotoChange}
+                    />
+                    <button
+                        type="button"
+                        onClick={handleSelectPhoto}
+                        disabled={isUploadingPhoto}
+                        className="absolute bottom-0 right-1/2 translate-x-12 h-8 w-8 bg-med-purple rounded-full text-white flex items-center justify-center shadow-md disabled:opacity-50"
+                    >
                         <PencilIcon className="w-5 h-5"/>
                     </button>
+                    {photoError && (
+                        <div className="text-sm text-red-600 mt-2 text-center">{photoError}</div>
+                    )}
                 </div>
                 
                 <div className="border-b border-med-gray-200 mb-6">
@@ -77,7 +154,8 @@ const Profile: React.FC = () => {
                             <input
                                 type="text"
                                 id="name"
-                                defaultValue={user.name}
+                                value={name}
+                                onChange={(event) => setName(event.target.value)}
                                 className="mt-1 block w-full px-3 py-2 bg-white border border-med-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-med-teal focus:border-med-teal text-med-gray-900"
                             />
                         </div>
@@ -88,7 +166,8 @@ const Profile: React.FC = () => {
                             <input
                                 type="email"
                                 id="email"
-                                defaultValue={user.email}
+                                value={email}
+                                onChange={(event) => setEmail(event.target.value)}
                                 className="mt-1 block w-full px-3 py-2 bg-white border border-med-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-med-teal focus:border-med-teal text-med-gray-900"
                             />
                         </div>
@@ -103,6 +182,9 @@ const Profile: React.FC = () => {
                                 className="mt-1 block w-full px-3 py-2 bg-white border border-med-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-med-teal focus:border-med-teal text-med-gray-900"
                             />
                         </div>
+                        {saveError && (
+                            <div className="text-sm text-red-600">{saveError}</div>
+                        )}
                     </form>
                 ) : (
                     <div className="text-center text-med-gray-500 py-10">
@@ -119,9 +201,10 @@ const Profile: React.FC = () => {
                 </button>
                 <button
                     onClick={handleSave}
+                    disabled={isSaving}
                     className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-med-teal hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-med-teal"
                 >
-                    Salvar Alterações
+                    {isSaving ? 'Salvando...' : 'Salvar Alterações'}
                 </button>
             </footer>
         </div>

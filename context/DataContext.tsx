@@ -7,8 +7,9 @@ import {
   type DocumentData,
   type QuerySnapshot,
 } from 'firebase/firestore';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { MOCK_CONSULTATIONS, MOCK_EXAMS, MOCK_PATIENTS, MOCK_REMINDERS, MOCK_USER } from '../constants';
-import { db, isFirebaseConfigured } from '../services/firebase';
+import { db, isFirebaseConfigured, storage } from '../services/firebase';
 import { useAuth } from './AuthContext';
 import type { Consultation, Exam, Patient, Reminder, User } from '../types';
 
@@ -24,6 +25,8 @@ interface DataContextType {
   getExamsByPatientId: (patientId: string) => Exam[];
   getReminders: () => Reminder[];
   addPatient: (patient: Omit<Patient, 'id'>) => void;
+  updateUser: (userUpdates: Partial<Pick<User, 'name' | 'email' | 'photoURL'>>) => Promise<void>;
+  uploadUserPhoto: (file: File) => Promise<string>;
   updatePatient: (patient: Patient) => void;
   addConsultation: (consultation: Omit<Consultation, 'id'>) => void;
   addExam: (exam: Omit<Exam, 'id'>) => void;
@@ -99,6 +102,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           name: resolvedName,
           email: data.email || fallbackEmail,
           initials: data.initials || getInitials(resolvedName),
+          photoURL: data.photoURL,
         });
         return;
       }
@@ -108,6 +112,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         name: fallbackName,
         email: fallbackEmail,
         initials: getInitials(fallbackName),
+        photoURL: firebaseUser?.photoURL || undefined,
       };
 
       setUser(initialUser);
@@ -173,6 +178,42 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  const updateUser = async (userUpdates: Partial<Pick<User, 'name' | 'email' | 'photoURL'>>) => {
+    const nextName = userUpdates.name?.trim() || user.name;
+    const nextEmail = userUpdates.email?.trim() || user.email;
+    const nextUser: User = {
+      ...user,
+      name: nextName,
+      email: nextEmail,
+      initials: getInitials(nextName),
+      photoURL: userUpdates.photoURL ?? user.photoURL,
+    };
+
+    setUser(nextUser);
+
+    if (!db || !isFirebaseConfigured || !activeUserId) {
+      return;
+    }
+
+    const userRef = doc(db, 'users', activeUserId);
+    await setDoc(userRef, nextUser, { merge: true });
+  };
+
+  const uploadUserPhoto = async (file: File): Promise<string> => {
+    if (!storage || !isFirebaseConfigured || !activeUserId) {
+      throw new Error('Firebase Storage nao esta configurado.');
+    }
+
+    const extension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+    const avatarRef = ref(storage, `users/${activeUserId}/profile/avatar.${extension}`);
+    await uploadBytes(avatarRef, file, {
+      contentType: file.type || 'image/jpeg',
+    });
+    const photoURL = await getDownloadURL(avatarRef);
+    await updateUser({ photoURL });
+    return photoURL;
+  };
+
   const updatePatient = (updatedPatient: Patient) => {
     setPatients((previous) =>
       previous.map((patient) => (patient.id === updatedPatient.id ? updatedPatient : patient))
@@ -228,6 +269,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       getExamsByPatientId,
       getReminders,
       addPatient,
+      updateUser,
+      uploadUserPhoto,
       updatePatient,
       addConsultation,
       addExam,

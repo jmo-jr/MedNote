@@ -23,9 +23,17 @@ const AppHeader: React.FC<AppHeaderProps> = ({ children }) => {
           </div>
         </Link>
         <Link to="/profile">
-          <div className="h-10 w-10 bg-med-gray-300 rounded-full flex items-center justify-center font-bold text-med-gray-600">
-            {user.initials}
-          </div>
+          {user.photoURL ? (
+            <img
+              src={user.photoURL}
+              alt={`Foto de perfil de ${user.name}`}
+              className="h-10 w-10 rounded-full object-cover bg-med-gray-300"
+            />
+          ) : (
+            <div className="h-10 w-10 bg-med-gray-300 rounded-full flex items-center justify-center font-bold text-med-gray-600">
+              {user.initials}
+            </div>
+          )}
         </Link>
       </div>
       {children}
